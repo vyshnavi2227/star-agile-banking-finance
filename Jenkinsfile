@@ -1,42 +1,34 @@
-pipeline{
+pipeline {
     agent any
-    stages{
-        stage('checkout the code from github'){
-            steps{
-                 git url: 'https://github.com/vyshnavi2227/star-agile-banking-finance.git'
-                 echo 'github url checkout'
+    
+    stages {
+        stage('Checkout') {
+            steps {
+                git 'https://github.com/vyshnavi2227/star-agile-banking-finance.git'
             }
         }
-        stage('vyshnavi codecompile'){
-            steps{
-                echo 'starting compiling'
-                sh 'mvn compile'
+        stage('Build') {
+            steps {
+                sh 'mvn clean install'
             }
         }
-        stage('vyshnavi codetesting'){
-            steps{
-                sh 'mvn test'
+        stage('Docker Login') {
+            steps {
+                withCredentials([string(credentialsId: 'doc_cred', variable: 'DOCKER_USERNAME')]) {
+                    sh 'echo $DOCKER_HUB_PASSWORD | docker login -u vyshnavi2227doc --password-stdin'
+                }
             }
         }
-        stage('vyshnavi qa'){
-            steps{
-                sh 'mvn checkstyle:checkstyle'
+        stage('Docker Build') {
+            steps {
+                sh 'docker build -t vyshnavi2227doc/banking-project:v1 .'
             }
         }
-        stage('package'){
-            steps{
-                sh 'mvn package'
+        stage('Docker Push') {
+            steps {
+                sh 'docker push vyshnavi2227doc/banking-project:v1'
             }
         }
-        stage('run dockerfile'){
-          steps{
-               sh 'docker build -t myimg .'
-           }
-         }
-        stage('port expose'){
-            steps{
-                sh 'docker run -dt -p 8091:8091 --name c01 myimg'
-            }
-        }   
     }
+}
 }
